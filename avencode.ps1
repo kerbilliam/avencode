@@ -256,7 +256,7 @@ function Invoke-Encoding {
         }
         
         if ((-not $NoForceKeyFrames)) {
-            '-force_key_frames', '"chapters"'
+            '-force_key_frames', 'chapters'
         }
         
         '-crf', $CRFValue
