@@ -11,7 +11,7 @@ param(
     [int[]]$CustomMap = $null, # Encouraged to use to exclude "core" tracks
     [string]$Start,
     [string]$Stop,
-    [string]$LiteralPath,
+    [switch]$LiteralPath,
     [switch]$DeInterlace,
     [switch]$DIFramePreserve,
     [switch]$NoForceKeyFrames,
@@ -40,7 +40,7 @@ begin {
             [Parameter(Mandatory)]
             [string[]]$Expressions,
             
-            [switch]$LPath
+            [bool]$LPath
         )
         
         $expanded_paths = @()
@@ -339,7 +339,7 @@ begin {
 
 process {
 
-    $filesToProcess = Get-MKVPaths $Paths
+    $filesToProcess = Get-MKVPaths -Expressions $Paths -LPath $LiteralPath
     $allFilesToProcess += $filesToProcess
 
 

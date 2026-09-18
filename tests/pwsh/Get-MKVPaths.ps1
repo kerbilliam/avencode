@@ -4,7 +4,7 @@ function Get-MKVPaths {
         [Parameter(Mandatory)]
         [string[]]$Expressions,
         
-        [switch]$LPath
+        [bool]$LPath = $false
     )
     
     $expanded_paths = @()
@@ -36,14 +36,15 @@ function Get-MKVPaths {
 }
 
 $fname = 'hello[1-9].mkv'
+$LPath = $true
 New-Item -Name $fname > $null
 
 Write-Host 'without litpath'
-$paths = Get-MKVPaths $fname
+$paths = Get-MKVPaths -Expressions $fname
 Write-Host "paths: $paths"
 
 Write-Host 'with litpath'
-$paths = Get-MKVPaths $fname -LPath
+$paths = Get-MKVPaths -Expressions $fname -LPath $LPath
 Write-Host "paths: $paths"
 
 Remove-Item -LiteralPath $fname
@@ -51,9 +52,9 @@ Remove-Item -LiteralPath $fname
 $fname = '*.ps1'
 
 Write-Host 'without litpath'
-$paths = Get-MKVPaths $fname
+$paths = Get-MKVPaths -Expressions $fname
 Write-Host "paths: $paths"
 
 Write-Host 'with litpath'
-$paths = Get-MKVPaths $fname -LPath
+$paths = Get-MKVPaths -Expressions $fname -LPath $LPath
 Write-Host "paths: $paths"
