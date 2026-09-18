@@ -50,7 +50,8 @@ begin {
             
             if ($LPath) {
                 $resolved = Resolve-Path -LiteralPath $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue
-            } else {
+            }
+            else {
                 $resolved = Resolve-Path -Path $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue
             }
     
@@ -58,7 +59,8 @@ begin {
                 $path = $_.ProviderPath
                 if ((Test-Path -PathType Leaf -LiteralPath $path) -and ($path -like '*.mkv')) {
                     $expanded_paths += $path
-                } else {
+                }
+                else {
                     Write-Warning "Skipping '$path': Not a valid .mkv file."
                 }
             }
@@ -131,9 +133,9 @@ begin {
         $streams = &$StreamExtractor $File
     
         return [PSCustomObject]@{
-            Input     = $File
-            Output    = $output
-            Streams   = $streams
+            Input   = $File
+            Output  = $output
+            Streams = $streams
         }
     }
     
@@ -173,12 +175,12 @@ begin {
         if ($bytecount -le 0) { return "0 Bytes" }
         
         switch -Regex ([math]::truncate([math]::log($bytecount, 1024))) {
-            '^0'     { "$bytecount Bytes" }
-            '^1'     { "{0:n2} KB" -f ($bytecount / 1KB) }    
-            '^2'     { "{0:n2} MB" -f ($bytecount / 1MB) }
-            '^3'     { "{0:n2} GB" -f ($bytecount / 1GB) }
-            '^4'     { "{0:n2} TB" -f ($bytecount / 1TB) }
-            Default { "{0:n2} TB" -f ($bytecount / 1TB) }
+            '^0' { "$bytecount Bytes" }
+            '^1' { "{0:n2} KB" -f ($bytecount / 1KB) }    
+            '^2' { "{0:n2} MB" -f ($bytecount / 1MB) }
+            '^3' { "{0:n2} GB" -f ($bytecount / 1GB) }
+            '^4' { "{0:n2} TB" -f ($bytecount / 1TB) }
+            default { "{0:n2} TB" -f ($bytecount / 1TB) }
         }
     }
     
@@ -273,7 +275,8 @@ begin {
     
         if ($DryRun) {
             Write-Host "ffmpeg $($trim_times -join ' ') -i '$($mkvFile.Input)' $($maps -join ' ') $($ffmpegArgs -join ' ') -metadata ENCODER_SETTINGS=""$metadata"" '$($mkvFile.Output)'"`n
-        } else {
+        }
+        else {
             & ffmpeg -hide_banner @trim_times -i $mkvFile.Input @maps @ffmpegArgs -metadata ENCODER_SETTINGS=$metadata $mkvFile.Output
         }
     }
@@ -281,9 +284,9 @@ begin {
     function Get-AvailableHWAccel {
         $gpus = (Get-CimInstance Win32_VideoController).Name
         
-        if ($gpus -match 'NVIDIA')      { return 'cuda' }
-        elseif ($gpus -match 'Intel')   { return 'qsv' }
-        else                            { return 'd3d11va' }
+        if ($gpus -match 'NVIDIA') { return 'cuda' }
+        elseif ($gpus -match 'Intel') { return 'qsv' }
+        else { return 'd3d11va' }
     }
     
     function Test-Output {
@@ -320,14 +323,14 @@ begin {
             if (Test-Path $errorLog) { Remove-Item $errorLog }
             return $true
         }
-}
+    }
 
-################ SCRIPT START ####################
+    ################ SCRIPT START ####################
 
-if ($CustomMap -and (-not (Test-CustomMap $CustomMap))) {
-    Write-Host 'Exiting...'
-    exit 0
-}
+    if ($CustomMap -and (-not (Test-CustomMap $CustomMap))) {
+        Write-Host 'Exiting...'
+        exit 0
+    }
     $allFilesToProcess = @()
     $failedFiles = 0
 
@@ -336,47 +339,50 @@ if ($CustomMap -and (-not (Test-CustomMap $CustomMap))) {
 
 process {
 
-$filesToProcess = Get-MKVPaths $Paths
-$allFilesToProcess += $filesToProcess
+    $filesToProcess = Get-MKVPaths $Paths
+    $allFilesToProcess += $filesToProcess
 
 
-foreach ($f in $filesToProcess) {
-    $mkvFile = New-MKVConfig $f
+    foreach ($f in $filesToProcess) {
+        $mkvFile = New-MKVConfig $f
     
-    if ($VerifyOnly) {
-        $mkvFile.Output = $mkvFile.Input
-    } else {
-        Invoke-Encoding $mkvFile
-    }
+        if ($VerifyOnly) {
+            $mkvFile.Output = $mkvFile.Input
+        }
+        else {
+            Invoke-Encoding $mkvFile
+        }
     
-    if ((-not $DryRun) -and (-not $SkipVerify)) {
-        $pass = Test-Output $mkvFile
-        if (-not $pass) { $failedFiles++ }
+        if ((-not $DryRun) -and (-not $SkipVerify)) {
+            $pass = Test-Output $mkvFile
+            if (-not $pass) { $failedFiles++ }
+        }
     }
-}
 }
 
 end {
-$outputFiles = $allFilesToProcess | ForEach-Object { Get-OutPath $_ }
+    $outputFiles = $allFilesToProcess | ForEach-Object { Get-OutPath $_ }
 
-$inputSize = Get-TotalSize $allFilesToProcess
-$outputSize = Get-TotalSize $outputFiles
-$difference = $inputSize - $outputSize
+    $inputSize = Get-TotalSize $allFilesToProcess
+    $outputSize = Get-TotalSize $outputFiles
+    $difference = $inputSize - $outputSize
 
-$diffPercent = if ($inputSize -gt 0) {
-    [Math]::Floor(($difference / $inputSize) * 100)
-} else { 0 }
+    $diffPercent = if ($inputSize -gt 0) {
+        [Math]::Floor(($difference / $inputSize) * 100)
+    }
+    else { 0 }
 
-$timer.Stop()
+    $timer.Stop()
 
-Write-Host ""
-Write-Host "==================================="
-Write-Host "Files processed : $($allFilesToProcess.Count)"
-Write-Host "Failed tests    : $failedFiles"
-Write-Host "Input size      : $(ConvertTo-HumanReadable $inputSize)"
-Write-Host "Output size     : $(ConvertTo-HumanReadable $outputSize)"
-Write-Host "Space saved     : $(ConvertTo-HumanReadable $difference) ($diffPercent%)"
-Write-Host ("Elapsed time    : {0:hh\:mm\:ss}" -f $timer.Elapsed)
-Write-Host "==================================="
+    Write-Host ""
+    Write-Host "==================================="
+    Write-Host "Files processed : $($allFilesToProcess.Count)"
+    Write-Host "Failed tests    : $failedFiles"
+    Write-Host "Input size      : $(ConvertTo-HumanReadable $inputSize)"
+    Write-Host "Output size     : $(ConvertTo-HumanReadable $outputSize)"
+    Write-Host "Space saved     : $(ConvertTo-HumanReadable $difference) ($diffPercent%)"
+    Write-Host ("Elapsed time    : {0:hh\:mm\:ss}" -f $timer.Elapsed)
+    Write-Host "==================================="
 
 }
+
