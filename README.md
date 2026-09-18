@@ -35,7 +35,7 @@
 | `-CustomMap` | `int[]` | `null` | Selective stream indices to include (e.g., `-CustomMap 0,1,2`). |
 | `-Start` | `string` | `null` | Trim start timestamp (e.g., `"00:01:30"`). |
 | `-Stop` | `string` | `null` | Trim end timestamp (e.g., `"00:45:00"`). |
-| `-LiteralPath` | `string` | `null` | Explicit path resolution without wildcard evaluation. |
+| `-LiteralPath` | `switch` | `false` | Explicit path resolution without wildcard evaluation. |
 | `-DeInterlace` | `switch` | `false` | Enables `bwdif` deinterlacing (`send_field` mode). |
 | `-DIFramePreserve` | `switch` | `false` | Enables `bwdif` deinterlacing with `send_frame` mode. |
 | `-NoForceKeyFrames` | `switch` | `false` | Disables keyframe placement at chapter markers. |
