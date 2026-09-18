@@ -56,13 +56,13 @@
 **Filenames with Regex/Wildcard Characters**
 
 ```powershell
-.\avencode.ps1 -LiteralPath "Show A [Part 1].mkv"
+.\avencode.ps1 -LiteralPath -Paths "Show A [Part 1].mkv"
 ```
 
 **Batch Processing via Pipeline**
 
 ```powershell
-Get-ChildItem "D:\Videos\*.mkv" | .\avencode.ps1 -Preset 5 -CRFValue 20
+Get-ChildItem "D:\Videos\*.mkv" | .\avencode.ps1 -Preset 5 -CRFValue 20 -LiteralPath
 ```
 
 **Custom Mapping & Film Grain Synthesis**
