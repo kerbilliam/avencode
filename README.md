@@ -62,7 +62,7 @@
 **Batch Processing via Pipeline**
 
 ```powershell
-Get-ChildItem "D:\Videos\*.mkv" | .\avencode.ps1 -Preset 5 -CRFValue 20 -LiteralPath
+Get-Content "vids_to_encode.txt" | .\avencode.ps1 -Preset 5 -CRFValue 20 -LiteralPath
 ```
 
 **Custom Mapping & Film Grain Synthesis**
