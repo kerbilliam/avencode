@@ -383,7 +383,7 @@ end {
     Write-Host ""
     Write-Host "==================================="
     Write-Host "Files processed : $($allFilesToProcess.Count)"
-    Write-Host "Failed tests    : $failedFiles"
+    Write-Host "Failed Files    : $failedFiles"
     Write-Host "Input size      : $(ConvertTo-HumanReadable $inputSize)"
     Write-Host "Output size     : $(ConvertTo-HumanReadable $outputSize)"
     Write-Host "Space saved     : $(ConvertTo-HumanReadable $difference) ($diffPercent%)"
