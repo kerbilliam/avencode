@@ -76,3 +76,5 @@ Get-Content "vids_to_encode.txt" | .\avencode.ps1 -Preset 5 -CRFValue 20 -Litera
 ```powershell
 .\avencode.ps1 -Paths "Test.mkv" -DryRun
 ```
+
+## Bash version planned...
