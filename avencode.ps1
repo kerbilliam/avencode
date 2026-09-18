@@ -345,6 +345,12 @@ process {
 
     foreach ($f in $filesToProcess) {
         $mkvFile = New-MKVConfig $f
+        
+        if ($null -eq $mkvFile.Streams) {
+            Write-Warning "Skipping '$f': Not a valid .mkv file."
+            $failedFiles++
+            continue
+        }
     
         if ($VerifyOnly) {
             $mkvFile.Output = $mkvFile.Input
