@@ -8,6 +8,7 @@
 
 * **AV1 Encoding**: Encodes video streams to 10-bit AV1 using `libsvtav1`.
 * **Smart Audio Mapping**: Retains multi-channel layouts while automatically converting uncompressed or spatial-free lossless formats (TrueHD, DTS-HD MA, PCM) to FLAC.
+* **Key Frames at Chapter Start Times**: Configures ffmpeg to force key frames at chapter start times for frame perfect chapter skipping and episode splitting.
 * **Integrity Verification**: Decodes encoded outputs to `null` post-encoding using hardware acceleration (`CUDA`, `QSV`, or `D3D11VA`) to detect stream errors.
 * **Batch Processing & Pipeline Support**: Supports direct file paths, wildcard patterns, and pipeline input.
 * **Dry Run Mode**: Prints generated `ffmpeg` execution strings without encoding.
