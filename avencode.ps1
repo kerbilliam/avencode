@@ -205,7 +205,12 @@ begin {
             switch ($ctype) {
                 'audio' {
                     '-map'; "0:$index"; "-c:$outIndex"
-                    if (&$FlacPredicate $stream) { 'flac' } else { 'copy' }
+                    if (&$FlacPredicate $stream) {
+                        'flac'
+                    } else {
+                        'copy'
+                        "-map_metadata:s:$outIndex"; "0:s:$index"
+                    }
                     $outIndex++
                 }
                 'video' {
@@ -214,6 +219,7 @@ begin {
                 }
                 'subtitle' {
                     '-map'; "0:$index"; "-c:$outIndex"; 'copy'
+                    "-map_metadata:s:$outIndex"; "0:s:$index"
                     $outIndex++
                 }
             }
@@ -267,11 +273,15 @@ begin {
             '-svtav1-params', $svtParams
             
             '-disposition:s', '0'
-            '-map_metadata', '0'
-            '-map_chapters', '0'
+            
+            if ([string]::IsNullOrWhiteSpace($Start) -and [string]::IsNullOrWhiteSpace($Stop)) {
+                '-map_chapters', '0'
+            } else {
+                '-map_chapters', '-1'
+            }
         )
     
-        $metadata = "CRF: $CRFValue, SVTAV1 Params: $svtParams"
+        $metadata = "crf=${CRFValue}:$svtParams"
     
         if ($DryRun) {
             Write-Host "ffmpeg $($trim_times -join ' ') -i '$($mkvFile.Input)' $($maps -join ' ') $($ffmpegArgs -join ' ') -metadata ENCODER_SETTINGS=""$metadata"" '$($mkvFile.Output)'"`n
