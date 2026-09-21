@@ -377,6 +377,11 @@ process {
 }
 
 end {
+    if ($DryRun) {
+        Write-Host "Total files: $($allFilesToProcess.Count)"
+        exit 0
+    }
+
     $outputFiles = $allFilesToProcess | ForEach-Object { Get-OutPath $_ }
 
     $inputSize = Get-TotalSize $allFilesToProcess
