@@ -381,6 +381,11 @@ end {
         Write-Host "Total files: $($allFilesToProcess.Count)"
         exit 0
     }
+    
+    if ($VerifyOnly) {
+        Write-Host "Failed files: $failedFiles out of $($allFilesToProcess.Count)"
+        exit 0
+    }
 
     $outputFiles = $allFilesToProcess | ForEach-Object { Get-OutPath $_ }
 
