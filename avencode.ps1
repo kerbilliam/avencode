@@ -11,6 +11,7 @@ param(
     [int[]]$CustomMap = $null, # Encouraged to use to exclude "core" tracks
     [string]$Start,
     [string]$Stop,
+    [string]$TitlesFile,
     [switch]$LiteralPath,
     [switch]$DeInterlace,
     [switch]$DIFramePreserve,
@@ -49,10 +50,10 @@ begin {
             $res_errors = $null
             
             if ($LPath) {
-                $resolved = Resolve-Path -LiteralPath $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue
+                $resolved = Resolve-Path -LiteralPath $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue | Sort-Object
             }
             else {
-                $resolved = Resolve-Path -Path $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue
+                $resolved = Resolve-Path -Path $exp -ErrorVariable res_errors -ErrorAction SilentlyContinue | Sort-Object
             }
     
             $resolved | ForEach-Object {
@@ -73,6 +74,20 @@ begin {
         return $expanded_paths
     }
     
+function Read-TitlesFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$File
+    )
+    
+    if (-not (Test-Path -PathType Leaf -LiteralPath $File)) {
+        return $null
+    }
+    
+    return Get-Content -LiteralPath $File
+}
+
     function Test-CustomMap {
         [CmdletBinding()]    
         param(
@@ -136,6 +151,7 @@ begin {
             Input   = $File
             Output  = $output
             Streams = $streams
+            Title   = $null
         }
     }
     
@@ -258,6 +274,11 @@ begin {
     
         $ffmpegArgs = @(
             '-map', '0:t?'
+            
+            # Set global title metadata if title is provided
+            if (-not [string]::IsNullOrWhiteSpace($mkvFile.Title)) {
+                '-metadata', "title=""$($mkvFile.Title)"""
+            }
     
             if ($DeInterlace -or $DIFramePreserve) {
                 $mode = if ($DIFramePreserve) { 'send_frame' } else { 'send_field' }
@@ -291,14 +312,6 @@ begin {
         }
     }
     
-    function Get-AvailableHWAccel {
-        $gpus = (Get-CimInstance Win32_VideoController).Name
-        
-        if ($gpus -match 'NVIDIA') { return 'cuda' }
-        elseif ($gpus -match 'Intel') { return 'qsv' }
-        else { return 'd3d11va' }
-    }
-    
     function Test-Output {
         param(
             [Parameter(Mandatory)]
@@ -314,7 +327,7 @@ begin {
             '-v', 'error'
     
             if (-not $NoHWAccel) {
-                '-hwaccel', (Get-AvailableHWAccel)
+                '-hwaccel', 'auto'
             }
             
             '-i', $out
@@ -322,15 +335,15 @@ begin {
             '-f', 'null', '-'
         )
         
-        & ffmpeg -hide_banner @ffargs 2> $errorLog
+        & ffmpeg -hide_banner @ffargs 2>&1 | Set-Content -LiteralPath $errorLog
         
-        if ((Test-Path $errorLog) -and ((Get-Item $errorLog).Length -gt 0)) {
+        if ((Test-Path -LiteralPath $errorLog) -and ((Get-Item -LiteralPath $errorLog).Length -gt 0)) {
             Write-Host ' [ERROR]' -ForegroundColor Red
             return $false
         }
         else {
             Write-Host ' [OK]' -ForegroundColor Green
-            if (Test-Path $errorLog) { Remove-Item $errorLog }
+            if (Test-Path -LiteralPath $errorLog) { Remove-Item -LiteralPath $errorLog }
             return $true
         }
     }
@@ -348,18 +361,48 @@ begin {
 }
 
 process {
+    $allFilesToProcess += Get-MKVPaths -Expressions $Paths -LPath $LiteralPath
+}
 
-    $filesToProcess = Get-MKVPaths -Expressions $Paths -LPath $LiteralPath
-    $allFilesToProcess += $filesToProcess
+end {
+    $inputCount = $allFilesToProcess.Count
 
+    # check if episode file is specified and matches input count
+    $Titles = $null
+    if (-not [string]::IsNullOrWhiteSpace($TitlesFile)) {
+        $Titles = Read-TitlesFile -File $TitlesFile
+        
+        if ($null -eq $Titles) {
+            Write-Warning "Error: '$TitlesFile' does not exist or is empty"
+            Write-Output 'Exiting...'
+            exit 1
+        }
+        
+        $titlesCount = $Titles.Count
+        if ($inputCount -ne $titlesCount) {
+            Write-Warning "Error: title count and input count mismatch"
+            Write-Output "Input file count is $inputCount but titles in episode file is $titlesCount"
+            Write-Output "Exiting..."
+            exit 1
+        }
+    }
 
-    foreach ($f in $filesToProcess) {
+    
+    $titleIndex = 0
+    foreach ($f in $allFilesToProcess) {
         $mkvFile = New-MKVConfig $f
         
         if ($null -eq $mkvFile.Streams) {
             Write-Warning "Skipping '$f': Not a valid .mkv file."
             $failedFiles++
+            $titleIndex++
             continue
+        }
+        
+        # set title field if titles are specified
+        if ($null -ne $Titles) {
+            $mkvFile.Title = $Titles[$titleIndex]
+            $titleIndex++
         }
     
         if ($VerifyOnly) {
@@ -374,11 +417,9 @@ process {
             if (-not $pass) { $failedFiles++ }
         }
     }
-}
 
-end {
     if ($DryRun) {
-        Write-Host "Total files: $($allFilesToProcess.Count)"
+        Write-Host "Total files: $inputCount"
         exit 0
     }
     
