@@ -321,7 +321,7 @@ function Read-TitlesFile {
         $out = $mkvFile.Output
         $errorLog = "${out}_errors.log"
         
-        Write-Host "Checking '${out}'..." -NoNewline
+        Write-Host "Checking '${out}'... " -NoNewline
         
         $ffargs = @(
             '-v', 'error'
@@ -331,18 +331,17 @@ function Read-TitlesFile {
             }
             
             '-i', $out
-            '-map', '0:v?'
             '-f', 'null', '-'
         )
         
         & ffmpeg -hide_banner @ffargs 2>&1 | Set-Content -LiteralPath $errorLog
         
         if ((Test-Path -LiteralPath $errorLog) -and ((Get-Item -LiteralPath $errorLog).Length -gt 0)) {
-            Write-Host ' [ERROR]' -ForegroundColor Red
+            Write-Host '[ERROR]' -ForegroundColor Red
             return $false
         }
         else {
-            Write-Host ' [OK]' -ForegroundColor Green
+            Write-Host '[OK]' -ForegroundColor Green
             if (Test-Path -LiteralPath $errorLog) { Remove-Item -LiteralPath $errorLog }
             return $true
         }
