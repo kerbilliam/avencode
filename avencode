@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+
+# avencode: Encode video files with SVT-AV1
+# Author: William Moore
+
+PROG="avencode"
+
+#### BEGIN OPTION VARIABLES ####
+CRF_VALUE=18
+PRESET=4
+VARIANCE_BOOST=2
+FILMGRAIN=0
+DENOISE=0
+INDEX_MAP=()
+START_TIME=
+STOP_TIME=
+DEINTERLACE=
+DIFRAMEPRESERVE=
+NO_FORCE_KEYFRAMES=
+NO_HWACCEL=
+VEIRFY_ONLY=
+SKIP_VERIFY=
+DRYRUN=
+#### END OPTION VARIABLES ######
+
+#### BEGIN HELPER FUNCTIONS ####
+print_help() {
+	echo help message
+}
+
+# return streams for video file in JSON format
+# args: FILEPATH
+get-streams() {
+	local file="$1"
+	local probe_json
+
+	probe_json=$(ffprobe -v error -show_streams -print_format json "$file" 2>/dev/null)
+
+	if [ -z "$probe_json" ]; then
+		echo "Error: Failed to read metadata from $file" >&2
+		return 1
+	fi
+
+	echo "$probe_json"
+}
+
+# returns if provided codec and profile can be converted to FLAC
+# args:
+# 1) codec: the .codec_name of the stream JSON
+# 2) profile: the .profile of the stream JSON
+is-lossless() {
+	local codec="$1"
+	local profile="$2"
+
+	# codecs that can safely be converted to FLAC
+	local lossless_codecs=('truehd' 'dts' 'pcm_s16be' 'pcm_24be' 'pcm_s16le' 'pcm_s24le' 'pcm_bluray')
+
+	local lossless=false
+	for c in "${lossless_codecs[@]}"; do
+		if [[ "$codec" == "$c" ]]; then
+			lossless=true
+			break
+		fi
+	done
+
+	if [[ "$lossless" != "true" ]]; then
+		return 1
+	fi
+
+	# special case: dts must be "DTS-HD MA"
+	if [[ "$codec" == "dts" && "$profile" != "DTS-HD MA" ]]; then
+		return 1
+	fi
+
+	return 0
+}
+
+# adds specified stream indexes specified in input into map_arr
+# args:
+# 1) map_arr: The bash array to add to. (Should be INDEX_MAP)
+# 2) input: The custom stream indexes from cli arguments
+read-custom-map() {
+	local -n map_arr=$1
+	local input_string="$2"
+
+	IFS=',' read -r -a map_arr <<< "$input_string"
+}
+
+#### END HELPER FUNCTIONS ######
+
+# parse options
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-h|--help) print_help ; exit 0 ;;
+		-c|--crf-value) CRF_VALUE="$2" ; shift 2 ;;
+		-p|--preset) PRESET="$2" ; shift 2 ;;
+		-v|--variance-boost) VARIANCE_BOOST="$2" ; shift 2 ;;
+		-g|--film-grain) FILMGRAIN="$2" ; shift 2 ;;
+		-d|--grain-denoise) DENOISE="$2" ; shift 2 ;;
+		-s|--start-time) START_TIME="$2" ; shift 2 ;;
+		-t|--stop-time) STOP_TIME="$2" ; shift 2 ;;
+		-i|--deinterlace) DEINTERLACE=1 ; shift ;;
+		-I|--deinterlace-frame-preserve)
+			DIFRAMEPRESERVE=1 ; shift ;;
+		-k|--no-force-keyframes)
+			NO_FORCE_KEYFRAMES=1 ; shift ;;
+		-H|--no-hwaccel) NO_HWACCEL=1 ; shift ;;
+		-V|--verify-only) VERIFY_ONLY=1 ; shift ;;
+		-S|--skip-verify) SKIP_VERIFY=1 ; shift ;;
+		-D|--dryrun) DRYRUN=1; shift ;;
+		--) shift ; break ;;
+		-*) echo "Unknown option $1" ; exit 1 ;;
+		*) break ;;
+	esac
+done
+
+echo "$@"
