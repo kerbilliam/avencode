@@ -16,7 +16,7 @@ param(
     [switch]$DeInterlace,
     [switch]$DIFramePreserve,
     [switch]$NoForceKeyFrames,
-    [switch]$NoHWAccel,
+    [switch]$HWAccel,
     [switch]$VerifyOnly,
     [switch]$SkipVerify,
     [switch]$DryRun,
@@ -326,7 +326,7 @@ function Read-TitlesFile {
         $ffargs = @(
             '-v', 'error'
     
-            if (-not $NoHWAccel) {
+            if ($HWAccel) {
                 '-hwaccel', 'auto'
             }
             
