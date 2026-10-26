@@ -86,6 +86,17 @@ read-custom-map() {
 	IFS=',' read -r -a map_arr <<< "$input_string"
 }
 
+get-outpath() {
+	echo "${1%*.mkv}-reenc.mkv"
+}
+
+human-readable() {
+	numfmt --to=iec-i --suffix=B --unit-separator=' ' $1
+}
+
+total-size() {
+	du -bc "$@" | tail -1 | cut -f 1
+}
 #### END HELPER FUNCTIONS ######
 
 # parse options
@@ -114,4 +125,4 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-echo "$@"
+
